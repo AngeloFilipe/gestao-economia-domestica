@@ -3,8 +3,8 @@ import { env } from "../env.js";
 
 export interface AccessTokenPayload {
   sub: string; // utilizadorId
-  familiaId: string;
-  papel: "ADMIN" | "MEMBRO";
+  familiaId: string | null; // null apenas para o papel GESTOR
+  papel: "GESTOR" | "ADMIN" | "MEMBRO";
 }
 
 export function assinarAccessToken(payload: AccessTokenPayload): string {

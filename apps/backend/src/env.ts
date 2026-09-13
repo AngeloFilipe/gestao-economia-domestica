@@ -8,6 +8,8 @@ const EnvSchema = z.object({
   JWT_SECRET: z.string().min(16),
   JWT_EXPIRES_IN: z.string().default("15m"),
   REFRESH_TOKEN_EXPIRES_DIAS: z.coerce.number().int().positive().default(30),
+  GESTOR_EMAIL: z.string().email().optional(),
+  GESTOR_PASSWORD: z.string().min(8).optional(),
 });
 
 const resultado = EnvSchema.safeParse(process.env);

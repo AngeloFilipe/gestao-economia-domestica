@@ -22,7 +22,8 @@ real em SQLite/Prisma está em `03-modelo-fisico.md` — este documento descreve
 | Coluna | Tipo | Notas |
 |---|---|---|
 | id | string | PK |
-| nome | string | NN |
+| nome | string | NN — nome de exibição do agregado |
+| codigoLogin | string | UK, NN — `nome` normalizado (maiúsculas, sem acentos), usado para identificar o agregado no login |
 | moeda | string | NN, omissão `"AOA"` |
 | criadoEm | datetime | NN |
 
@@ -30,13 +31,18 @@ real em SQLite/Prisma está em `03-modelo-fisico.md` — este documento descreve
 | Coluna | Tipo | Notas |
 |---|---|---|
 | id | string | PK |
-| familiaId | string | FK → familias.id, NN |
+| familiaId | string | FK → familias.id, **nullable** (NULL apenas para papel `GESTOR`) |
 | nome | string | NN |
-| email | string | UK, NN |
+| email | string | UK, NN — único em toda a aplicação, não só dentro do agregado |
 | passwordHash | string | NN — nunca a password em claro |
-| papel | string | NN, `ADMIN`\|`MEMBRO` |
+| papel | string | NN, `GESTOR`\|`ADMIN`\|`MEMBRO` |
 | ativo | boolean | NN, omissão `true` |
 | criadoEm | datetime | NN |
+
+*Nota:* não há registo público. Um `GESTOR` nasce a partir de variáveis de ambiente no
+arranque do servidor (ver `03-modelo-fisico.md`); um `ADMIN` nasce quando o gestor cria
+um agregado; um `MEMBRO` (ou outro `ADMIN`) nasce quando um `ADMIN` do agregado o
+cadastra.
 
 ### refresh_tokens
 | Coluna | Tipo | Notas |

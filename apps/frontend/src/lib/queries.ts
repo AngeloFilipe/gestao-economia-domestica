@@ -1,8 +1,10 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import type {
+  AgregadoDTO,
   AlertaDTO,
   CategoriaDTO,
   ConvidarMembroInput,
+  CriarAgregadoInput,
   CriarMovimentoInput,
   CriarOrcamentoInput,
   EstadoPeriodo,
@@ -134,6 +136,18 @@ export function useAlertas(apenasNaoLidos = false) {
     queryKey: ["alertas", apenasNaoLidos],
     queryFn: () => api.get<AlertaDTO[]>(`/alertas${apenasNaoLidos ? "?apenasNaoLidos=true" : ""}`),
     refetchInterval: 60_000,
+  });
+}
+
+export function useAgregados() {
+  return useQuery({ queryKey: ["agregados"], queryFn: () => api.get<AgregadoDTO[]>("/auth/gestor/agregados") });
+}
+
+export function useCriarAgregado() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (input: CriarAgregadoInput) => api.post<AgregadoDTO>("/auth/gestor/agregados", input),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["agregados"] }),
   });
 }
 

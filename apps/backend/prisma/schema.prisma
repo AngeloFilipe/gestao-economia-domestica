@@ -20,11 +20,15 @@ datasource db {
 // Família e utilizadores
 // ---------------------------------------------------------------------------
 
+/// codigoLogin: forma normalizada de `nome` (maiúsculas, sem acentos) usada
+/// para identificar o agregado no ecrã de login — ex.: nome "Família Costa"
+/// guarda codigoLogin "FAMILIA COSTA". Ver apps/backend/src/lib/agregado.ts.
 model Familia {
-  id       String   @id @default(cuid())
-  nome     String
-  moeda    String   @default("AOA")
-  criadoEm DateTime @default(now())
+  id           String   @id @default(cuid())
+  nome         String
+  codigoLogin  String   @unique
+  moeda        String   @default("AOA")
+  criadoEm     DateTime @default(now())
 
   utilizadores      Utilizador[]
   categorias        Categoria[]
@@ -36,11 +40,16 @@ model Familia {
   @@map("familias")
 }
 
-/// papel: "ADMIN" | "MEMBRO"
+/// papel: "GESTOR" | "ADMIN" | "MEMBRO"
+///
+/// familiaId é NULL apenas para o papel GESTOR: o gestor da aplicação não
+/// pertence a nenhum agregado — é quem cria os agregados (Familia) e o
+/// primeiro administrador de cada um. Um ADMIN pode depois cadastrar mais
+/// membros dentro do seu próprio agregado (ver auth.service.ts).
 model Utilizador {
   id           String   @id @default(cuid())
-  familiaId    String
-  familia      Familia  @relation(fields: [familiaId], references: [id])
+  familiaId    String?
+  familia      Familia? @relation(fields: [familiaId], references: [id])
   nome         String
   email        String   @unique
   passwordHash String

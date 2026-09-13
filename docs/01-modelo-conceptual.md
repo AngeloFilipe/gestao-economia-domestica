@@ -32,15 +32,16 @@ erDiagram
 
     FAMILIA {
         string id PK
-        string nome
+        string nome "nome de exibição, ex. Costa Filipe"
+        string codigoLogin UK "nome normalizado, ex. COSTAFILIPES"
         string moeda "AOA por omissão"
     }
     UTILIZADOR {
         string id PK
-        string familiaId FK
+        string familiaId FK "NULL apenas para GESTOR"
         string nome
         string email UK
-        string papel "ADMIN | MEMBRO"
+        string papel "GESTOR | ADMIN | MEMBRO"
     }
     CATEGORIA {
         string id PK
@@ -95,14 +96,27 @@ erDiagram
 ## Entidades
 
 ### Familia
-A fronteira de "tenant" da aplicação: tudo o resto pertence a uma família. Guarda a
-moeda usada nos relatórios (AOA por omissão, dado o contexto do documento MINFIN).
+A fronteira de "tenant" da aplicação — um **agregado familiar** (ex.: "COSTAFILIPES"):
+tudo o resto pertence a uma família. Guarda a moeda usada nos relatórios (AOA por
+omissão, dado o contexto do documento MINFIN). `nome` é a forma de exibição (a que o
+gestor escreveu, ex. "Costa Filipe"); `codigoLogin` é a forma normalizada — maiúsculas,
+sem acentos — usada para identificar o agregado no ecrã de login, para que "Costa
+Filipe", "costa filipe" e "COSTA FILIPE" apontem sempre ao mesmo agregado (ver
+`apps/backend/src/lib/agregado.ts`).
 
 ### Utilizador
-Uma pessoa da família com acesso à aplicação. Tem um **papel**: `ADMIN` (normalmente
-quem cria a família — pode criar orçamentos, convidar membros, ajustar linhas
-orçamentadas) ou `MEMBRO` (pode registar movimentos e consultar tudo, mas não alterar
-o plano). Um utilizador pertence a exatamente uma família.
+Uma pessoa com acesso à aplicação. Tem um **papel**:
+- `GESTOR` — o gestor da aplicação. Não pertence a nenhum agregado (`familiaId = NULL`);
+  a sua única responsabilidade é criar novos agregados e o respetivo primeiro
+  administrador. Não há registo público — a primeira conta de gestor nasce a partir de
+  variáveis de ambiente no arranque do servidor (ver `docs/03-modelo-fisico.md`).
+- `ADMIN` — administrador de um agregado (criado pelo gestor, ou promovido por outro
+  administrador do mesmo agregado). Pode criar orçamentos, ajustar linhas orçamentadas,
+  e cadastrar mais membros (`ADMIN` ou `MEMBRO`) **dentro do seu próprio agregado**.
+- `MEMBRO` — pode registar movimentos e consultar tudo no seu agregado, mas não alterar
+  o plano nem cadastrar outros membros.
+
+Um `ADMIN`/`MEMBRO` pertence a exatamente um agregado; um `GESTOR` a nenhum.
 
 ### Categoria
 Hierarquia de três níveis — **Grupo > Subcategoria > Rubrica** — transcrita
@@ -148,7 +162,9 @@ concreto, gerado automaticamente, nunca escrito à mão por um utilizador.
 
 ## Cardinalidades-chave
 
-- Uma Família tem muitos Utilizadores; um Utilizador pertence a uma só Família.
+- Uma Família tem muitos Utilizadores (`ADMIN`/`MEMBRO`); um `GESTOR` não pertence a
+  nenhuma Família. A aplicação suporta múltiplas Famílias em simultâneo, cada uma
+  isolada das outras — nenhuma consulta atravessa agregados.
 - Uma Categoria pode ter muitas Categorias-filhas (Grupo→Subcategoria→Rubrica); só as
   Rubricas podem ser planeadas (`LinhaOrcamentada`) ou usadas em `Movimento`.
 - Um PeriodoOrcamento tem muitas LinhasOrcamentadas (uma por Rubrica planeada).

@@ -4,7 +4,7 @@ import { z } from "zod";
 // se esta fosse PostgreSQL/MySQL. O SQLite não suporta enums nativos, por
 // isso o Prisma guarda estes campos como String e a validação acontece aqui.
 
-export const PapelUtilizador = z.enum(["ADMIN", "MEMBRO"]);
+export const PapelUtilizador = z.enum(["GESTOR", "ADMIN", "MEMBRO"]);
 export type PapelUtilizador = z.infer<typeof PapelUtilizador>;
 
 export const TipoPeriodo = z.enum(["MENSAL", "TRIMESTRAL", "SEMESTRAL", "ANUAL"]);

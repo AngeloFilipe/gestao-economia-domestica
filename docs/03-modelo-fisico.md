@@ -36,10 +36,37 @@ frontend, e é validada na fronteira da API — não na base de dados. Se este e
 um dia portado para PostgreSQL, estes campos tornam-se `enum` nativos sem alterar
 nenhuma linha de código de negócio (o Zod schema já teria os valores certos).
 
+## Multi-agregado, gestor da aplicação, e login por nome do agregado
+
+Não existe registo público. O ciclo de vida de uma conta é sempre um destes três:
+
+1. **GESTOR** — criado automaticamente pelo backend no arranque
+   (`garantirGestorInicial`, em `apps/backend/src/services/auth.service.ts`), a partir
+   de `GESTOR_EMAIL`/`GESTOR_PASSWORD` em `.env`, apenas se ainda não existir nenhum
+   utilizador com esse email. É a única conta com `familiaId = NULL`. Autentica-se em
+   `/api/auth/gestor/login` (só email+password — não tem agregado).
+2. **ADMIN** — criado pelo gestor via `POST /api/auth/gestor/agregados`
+   (`CriarAgregadoInput`), que cria a `Familia` e o seu primeiro `ADMIN` numa só
+   operação.
+3. **MEMBRO** (ou outro `ADMIN`) — criado por um `ADMIN` já existente do mesmo
+   agregado, via `POST /api/auth/membros` (inalterado desde a versão anterior deste
+   documento) — continua a ser o próprio agregado a gerir o seu crescimento, só a
+   *criação do agregado em si* está centralizada no gestor.
+
+O login normal (`POST /api/auth/login`, `LoginInput`) exige `nomeAgregado` além de
+email/password: o backend normaliza esse texto com `normalizarCodigoLogin`
+(`apps/backend/src/lib/agregado.ts` — maiúsculas, sem acentos, espaços colapsados),
+procura a `Familia` cujo `codigoLogin` bate certo, e só depois procura o `Utilizador`
+por email **dentro** dessa família (`findFirst({ email, familiaId })`). Isto significa
+que o mesmo email nunca pode existir em duas famílias (a coluna `email` continua
+globalmente única), mas a *tentativa* de login sempre passa primeiro pela identidade do
+agregado — reflete o pedido de que os agregados sejam "identificados pelo nome".
+
 ## Índices
 
 | Tabela | Índice | Motivo |
 |---|---|---|
+| familias | (codigoLogin) UK | resolver o agregado a partir do nome digitado no login |
 | utilizadores | (familiaId) | listar membros de uma família |
 | refresh_tokens | (utilizadorId) | revogar todos os tokens de um utilizador |
 | categorias | (familiaId) | obter categorias próprias de uma família |

@@ -1,4 +1,5 @@
 import type { FastifyInstance } from "fastify";
+import { familiaIdObrigatoria } from "../lib/contexto.js";
 import type { ZodTypeProvider } from "fastify-type-provider-zod";
 import { z } from "zod";
 import { AtualizarMovimentoInput, CriarMovimentoInput, FiltroMovimentosQuery } from "@ged/shared";
@@ -17,14 +18,14 @@ export async function movimentosRoutes(app: FastifyInstance) {
   rotas.addHook("preHandler", app.autenticar);
 
   rotas.get("/", { schema: { querystring: FiltroMovimentosQuery } }, async (request) =>
-    listarMovimentos(app.prisma, request.utilizador!.familiaId, request.query),
+    listarMovimentos(app.prisma, familiaIdObrigatoria(request), request.query),
   );
 
   rotas.post("/", { schema: { body: CriarMovimentoInput } }, async (request, reply) => {
     try {
       const movimento = await criarMovimento(
         app.prisma,
-        request.utilizador!.familiaId,
+        familiaIdObrigatoria(request),
         request.utilizador!.sub,
         request.body,
       );
@@ -41,7 +42,7 @@ export async function movimentosRoutes(app: FastifyInstance) {
     async (request, reply) => {
       const movimento = await atualizarMovimento(
         app.prisma,
-        request.utilizador!.familiaId,
+        familiaIdObrigatoria(request),
         request.params.movimentoId,
         request.body,
       );
@@ -51,7 +52,7 @@ export async function movimentosRoutes(app: FastifyInstance) {
   );
 
   rotas.delete("/:movimentoId", { schema: { params: ParametrosMovimento } }, async (request, reply) => {
-    const removido = await removerMovimento(app.prisma, request.utilizador!.familiaId, request.params.movimentoId);
+    const removido = await removerMovimento(app.prisma, familiaIdObrigatoria(request), request.params.movimentoId);
     if (!removido) return reply.code(404).send({ mensagem: "Movimento não encontrado." });
     return reply.code(204).send();
   });

@@ -1,9 +1,11 @@
-import { Suspense, lazy } from "react";
+import { Suspense, lazy, type ReactNode } from "react";
 import { Navigate, Route, Routes } from "react-router-dom";
 import { useAuth } from "./context/AuthContext";
 import { Layout } from "./components/Layout";
+import { GestorLayout } from "./components/GestorLayout";
 import { LoginPage } from "./pages/LoginPage";
-import { RegistarPage } from "./pages/RegistarPage";
+import { GestorLoginPage } from "./pages/GestorLoginPage";
+import { GestorAgregadosPage } from "./pages/GestorAgregadosPage";
 import { OrcamentoListaPage } from "./pages/OrcamentoListaPage";
 import { OrcamentoNovoPage } from "./pages/OrcamentoNovoPage";
 import { OrcamentoDetalhePage } from "./pages/OrcamentoDetalhePage";
@@ -23,33 +25,44 @@ function EcraCarregamento() {
   );
 }
 
-function RotaProtegida({ children }: { children: React.ReactNode }) {
+function paginaInicialDe(papel: string | undefined) {
+  return papel === "GESTOR" ? "/gestor/agregados" : "/orcamento";
+}
+
+function RotaProtegida({ children }: { children: ReactNode }) {
   const { utilizador, carregando } = useAuth();
   if (carregando) return <EcraCarregamento />;
   if (!utilizador) return <Navigate to="/login" replace />;
   return <>{children}</>;
 }
 
-function RotaPublica({ children }: { children: React.ReactNode }) {
+function RotaPublica({ children }: { children: ReactNode }) {
   const { utilizador, carregando } = useAuth();
   if (carregando) return <EcraCarregamento />;
-  if (utilizador) return <Navigate to="/orcamento" replace />;
+  if (utilizador) return <Navigate to={paginaInicialDe(utilizador.papel)} replace />;
   return <>{children}</>;
 }
 
-export default function App() {
+/** O gestor da aplicação não pertence a nenhum agregado — tem a sua própria
+ * área, separada do resto da app (que assume sempre um agregado). */
+function AreaAutenticada() {
+  const { utilizador } = useAuth();
+
+  if (utilizador?.papel === "GESTOR") {
+    return (
+      <Routes>
+        <Route element={<GestorLayout />}>
+          <Route index element={<Navigate to="/gestor/agregados" replace />} />
+          <Route path="/gestor/agregados" element={<GestorAgregadosPage />} />
+        </Route>
+        <Route path="*" element={<Navigate to="/gestor/agregados" replace />} />
+      </Routes>
+    );
+  }
+
   return (
     <Routes>
-      <Route path="/login" element={<RotaPublica><LoginPage /></RotaPublica>} />
-      <Route path="/registar" element={<RotaPublica><RegistarPage /></RotaPublica>} />
-
-      <Route
-        element={
-          <RotaProtegida>
-            <Layout />
-          </RotaProtegida>
-        }
-      >
+      <Route element={<Layout />}>
         <Route index element={<Navigate to="/orcamento" replace />} />
         <Route path="/orcamento" element={<OrcamentoListaPage />} />
         <Route path="/orcamento/novo" element={<OrcamentoNovoPage />} />
@@ -66,8 +79,24 @@ export default function App() {
         <Route path="/alertas" element={<AlertasPage />} />
         <Route path="/membros" element={<MembrosPage />} />
       </Route>
+      <Route path="*" element={<Navigate to="/orcamento" replace />} />
+    </Routes>
+  );
+}
 
-      <Route path="*" element={<Navigate to="/" replace />} />
+export default function App() {
+  return (
+    <Routes>
+      <Route path="/login" element={<RotaPublica><LoginPage /></RotaPublica>} />
+      <Route path="/gestor/entrar" element={<RotaPublica><GestorLoginPage /></RotaPublica>} />
+      <Route
+        path="/*"
+        element={
+          <RotaProtegida>
+            <AreaAutenticada />
+          </RotaProtegida>
+        }
+      />
     </Routes>
   );
 }

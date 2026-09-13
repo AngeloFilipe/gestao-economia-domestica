@@ -1,12 +1,12 @@
 import { createContext, useContext, useEffect, useState, type ReactNode } from "react";
-import type { LoginInput, RegistarFamiliaInput, SessaoResposta, UtilizadorPublico } from "@ged/shared";
+import type { LoginGestorInput, LoginInput, SessaoResposta, UtilizadorPublico } from "@ged/shared";
 import { api, definirAccessToken, renovarSessao } from "../lib/api";
 
 interface AuthContextValor {
   utilizador: UtilizadorPublico | null;
   carregando: boolean;
   entrar: (input: LoginInput) => Promise<void>;
-  registar: (input: RegistarFamiliaInput) => Promise<void>;
+  entrarComoGestor: (input: LoginGestorInput) => Promise<void>;
   sair: () => Promise<void>;
 }
 
@@ -36,8 +36,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setUtilizador(resposta.utilizador);
   }
 
-  async function registar(input: RegistarFamiliaInput) {
-    const resposta = await api.post<SessaoResposta>("/auth/registar", input);
+  async function entrarComoGestor(input: LoginGestorInput) {
+    const resposta = await api.post<SessaoResposta>("/auth/gestor/login", input);
     definirAccessToken(resposta.accessToken);
     setUtilizador(resposta.utilizador);
   }
@@ -49,7 +49,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }
 
   return (
-    <AuthContext.Provider value={{ utilizador, carregando, entrar, registar, sair }}>
+    <AuthContext.Provider value={{ utilizador, carregando, entrar, entrarComoGestor, sair }}>
       {children}
     </AuthContext.Provider>
   );

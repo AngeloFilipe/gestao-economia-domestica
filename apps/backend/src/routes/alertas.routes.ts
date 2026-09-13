@@ -1,4 +1,5 @@
 import type { FastifyInstance } from "fastify";
+import { familiaIdObrigatoria } from "../lib/contexto.js";
 import type { ZodTypeProvider } from "fastify-type-provider-zod";
 import { z } from "zod";
 import { listarAlertas, marcarAlertaLido } from "../services/alertas.service.js";
@@ -11,13 +12,13 @@ export async function alertasRoutes(app: FastifyInstance) {
   rotas.addHook("preHandler", app.autenticar);
 
   rotas.get("/", { schema: { querystring: QueryAlertas } }, async (request) =>
-    listarAlertas(app.prisma, request.utilizador!.familiaId, { apenasNaoLidos: request.query.apenasNaoLidos }),
+    listarAlertas(app.prisma, familiaIdObrigatoria(request), { apenasNaoLidos: request.query.apenasNaoLidos }),
   );
 
   rotas.patch("/:alertaId/lido", { schema: { params: ParametrosAlerta } }, async (request, reply) => {
     const alerta = await marcarAlertaLido(
       app.prisma,
-      request.utilizador!.familiaId,
+      familiaIdObrigatoria(request),
       request.params.alertaId,
       request.utilizador!.sub,
     );

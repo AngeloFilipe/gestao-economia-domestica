@@ -1,4 +1,5 @@
 import type { FastifyInstance } from "fastify";
+import { familiaIdObrigatoria } from "../lib/contexto.js";
 import type { ZodTypeProvider } from "fastify-type-provider-zod";
 import { z } from "zod";
 import { AtualizarEstadoPeriodoInput, CriarOrcamentoInput, LinhaOrcamentadaInput } from "@ged/shared";
@@ -19,13 +20,13 @@ export async function orcamentoRoutes(app: FastifyInstance) {
   const rotas = app.withTypeProvider<ZodTypeProvider>();
   rotas.addHook("preHandler", app.autenticar);
 
-  rotas.get("/", async (request) => listarPeriodos(app.prisma, request.utilizador!.familiaId));
+  rotas.get("/", async (request) => listarPeriodos(app.prisma, familiaIdObrigatoria(request)));
 
   rotas.post("/", { schema: { body: CriarOrcamentoInput } }, async (request, reply) => {
     try {
       const periodo = await criarOrcamento(
         app.prisma,
-        request.utilizador!.familiaId,
+        familiaIdObrigatoria(request),
         request.utilizador!.sub,
         request.body,
       );
@@ -37,7 +38,7 @@ export async function orcamentoRoutes(app: FastifyInstance) {
   });
 
   rotas.get("/:periodoId", { schema: { params: ParametrosPeriodo } }, async (request, reply) => {
-    const periodo = await obterPeriodo(app.prisma, request.utilizador!.familiaId, request.params.periodoId);
+    const periodo = await obterPeriodo(app.prisma, familiaIdObrigatoria(request), request.params.periodoId);
     if (!periodo) return reply.code(404).send({ mensagem: "Orçamento não encontrado." });
     return periodo;
   });
@@ -48,7 +49,7 @@ export async function orcamentoRoutes(app: FastifyInstance) {
     async (request, reply) => {
       const periodo = await atualizarEstadoPeriodo(
         app.prisma,
-        request.utilizador!.familiaId,
+        familiaIdObrigatoria(request),
         request.params.periodoId,
         request.body.estado,
       );
@@ -63,7 +64,7 @@ export async function orcamentoRoutes(app: FastifyInstance) {
     async (request, reply) => {
       const periodo = await definirLinha(
         app.prisma,
-        request.utilizador!.familiaId,
+        familiaIdObrigatoria(request),
         request.params.periodoId,
         request.body,
       );
@@ -75,7 +76,7 @@ export async function orcamentoRoutes(app: FastifyInstance) {
   rotas.delete("/:periodoId/linhas/:linhaId", { schema: { params: ParametrosLinha } }, async (request, reply) => {
     const removida = await removerLinha(
       app.prisma,
-      request.utilizador!.familiaId,
+      familiaIdObrigatoria(request),
       request.params.periodoId,
       request.params.linhaId,
     );

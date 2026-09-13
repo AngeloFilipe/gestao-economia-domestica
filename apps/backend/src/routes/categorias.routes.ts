@@ -1,4 +1,5 @@
 import type { FastifyInstance } from "fastify";
+import { familiaIdObrigatoria } from "../lib/contexto.js";
 import type { ZodTypeProvider } from "fastify-type-provider-zod";
 import { z } from "zod";
 import { CategoriaDTO, CriarCategoriaInput } from "@ged/shared";
@@ -10,7 +11,7 @@ export async function categoriasRoutes(app: FastifyInstance) {
   rotas.get(
     "/",
     { preHandler: app.autenticar, schema: { response: { 200: z.array(CategoriaDTO) } } },
-    async (request) => obterArvoreCategorias(app.prisma, request.utilizador!.familiaId),
+    async (request) => obterArvoreCategorias(app.prisma, familiaIdObrigatoria(request)),
   );
 
   rotas.post(
@@ -18,7 +19,7 @@ export async function categoriasRoutes(app: FastifyInstance) {
     { preHandler: app.autenticar, schema: { body: CriarCategoriaInput } },
     async (request, reply) => {
       try {
-        return await criarCategoriaPersonalizada(app.prisma, request.utilizador!.familiaId, request.body);
+        return await criarCategoriaPersonalizada(app.prisma, familiaIdObrigatoria(request), request.body);
       } catch (erro) {
         if (erro instanceof ErroCategoria) return reply.code(400).send({ mensagem: erro.message });
         throw erro;

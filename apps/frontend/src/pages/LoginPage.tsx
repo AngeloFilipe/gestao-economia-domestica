@@ -30,10 +30,20 @@ export function LoginPage() {
         <div className="mb-6 flex flex-col items-center gap-2">
           <img src="/pwa-192.png" alt="" className="h-14 w-14 rounded-xl" />
           <h1 className="text-lg font-semibold text-slate-800">Gestão de Economia Doméstica</h1>
-          <p className="text-center text-sm text-slate-500">Entre para gerir o orçamento da sua família.</p>
+          <p className="text-center text-sm text-slate-500">Entre para gerir o orçamento do seu agregado.</p>
         </div>
 
         <form onSubmit={handleSubmit(aoSubmeter)} className="space-y-4">
+          <div>
+            <label className="mb-1 block text-sm font-medium text-slate-700">Nome do agregado</label>
+            <input
+              className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-marca-500 focus:outline-none focus:ring-1 focus:ring-marca-500"
+              placeholder="Ex.: COSTAFILIPES"
+              autoCapitalize="characters"
+              {...register("nomeAgregado")}
+            />
+            {errors.nomeAgregado && <p className="mt-1 text-xs text-red-600">{errors.nomeAgregado.message}</p>}
+          </div>
           <div>
             <label className="mb-1 block text-sm font-medium text-slate-700">Email</label>
             <input
@@ -65,13 +75,15 @@ export function LoginPage() {
         </form>
 
         <p className="mt-4 text-center text-sm text-slate-500">
-          Ainda não tem família registada?{" "}
-          <Link to="/registar" className="font-medium text-marca-600 hover:underline">
-            Criar agora
-          </Link>
+          O seu agregado ainda não existe? Peça ao gestor da aplicação para o criar.
         </p>
         <p className="mt-3 rounded-lg bg-slate-50 px-3 py-2 text-center text-xs text-slate-400">
-          Demo: ana@familia.demo / Demo1234!
+          Demo: agregado "Família Demo" · ana@familia.demo / Demo1234!
+        </p>
+        <p className="mt-4 text-center text-xs">
+          <Link to="/gestor/entrar" className="text-slate-400 hover:text-marca-600 hover:underline">
+            Entrar como gestor da aplicação
+          </Link>
         </p>
       </div>
     </div>

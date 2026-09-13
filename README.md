@@ -6,6 +6,11 @@ Aplicação web (PWA) para gestão financeira familiar, inspirada no documento d
 "Domina as suas finanças ou as suas finanças o dominam?" — com três domínios: Orçamento,
 Registo Diário de despesas/receitas, e Relatórios & Alertas de risco de rutura orçamental.
 
+Suporta vários agregados familiares (ex.: "COSTAFILIPES"), cada um identificado pelo seu
+nome no login. Não há registo público: um **gestor da aplicação** cria cada agregado e o
+seu primeiro administrador; esse administrador pode depois cadastrar mais membros do seu
+próprio agregado.
+
 Ver `docs/` para a filosofia da aplicação e os modelos conceptual, lógico e físico da base
 de dados, e o manual do utilizador.
 
@@ -23,6 +28,10 @@ npm run dev
 
 - Backend (API): http://localhost:3333 (documentação OpenAPI em `/docs`)
 - Frontend (PWA): http://localhost:5173
+
+A conta do **gestor da aplicação** é criada automaticamente no arranque a partir de
+`GESTOR_EMAIL`/`GESTOR_PASSWORD` em `apps/backend/.env` (ver `.env.example`) — é com essa
+conta, em `/gestor/entrar`, que se cria cada agregado familiar e o seu administrador.
 
 > A base de dados SQLite fica fora desta pasta (fora do Dropbox), em
 > `~/.gestao-economia-domestica/dev.db`, para evitar que o Dropbox sincronize um ficheiro

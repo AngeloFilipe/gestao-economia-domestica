@@ -1,6 +1,7 @@
 import { PrismaClient } from "@prisma/client";
 import argon2 from "argon2";
 import { ARVORE_CATEGORIAS_MINFIN } from "./categorias-minfin.js";
+import { normalizarCodigoLogin } from "../src/lib/agregado.js";
 
 const prisma = new PrismaClient();
 
@@ -80,7 +81,7 @@ async function semearFamiliaDemo() {
   }
 
   const familia = await prisma.familia.create({
-    data: { nome: "Família Demo", moeda: "AOA" },
+    data: { nome: "Família Demo", codigoLogin: normalizarCodigoLogin("Família Demo"), moeda: "AOA" },
   });
 
   const passwordHash = await argon2.hash("Demo1234!");

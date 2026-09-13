@@ -9,6 +9,7 @@ declare module "fastify" {
   interface FastifyInstance {
     autenticar: (request: FastifyRequest, reply: FastifyReply) => Promise<void>;
     exigirAdmin: (request: FastifyRequest, reply: FastifyReply) => Promise<void>;
+    exigirGestor: (request: FastifyRequest, reply: FastifyReply) => Promise<void>;
   }
 }
 
@@ -28,6 +29,12 @@ export const authPlugin = fp(async (app: FastifyInstance) => {
   app.decorate("exigirAdmin", async (request: FastifyRequest, reply: FastifyReply) => {
     if (request.utilizador?.papel !== "ADMIN") {
       return reply.code(403).send({ mensagem: "Ação reservada ao administrador da família." });
+    }
+  });
+
+  app.decorate("exigirGestor", async (request: FastifyRequest, reply: FastifyReply) => {
+    if (request.utilizador?.papel !== "GESTOR") {
+      return reply.code(403).send({ mensagem: "Ação reservada ao gestor da aplicação." });
     }
   });
 });

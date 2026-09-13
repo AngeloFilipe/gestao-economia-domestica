@@ -12,15 +12,25 @@ Ver também `README.md` para os comandos exatos. Resumo:
 6. `npm run dev` — arranca backend (porta 3333) e frontend (porta 5173) em simultâneo.
 7. Abrir `http://localhost:5173` no browser do telemóvel, tablet ou computador (todos na mesma rede Wi-Fi de casa conseguem aceder pelo IP mostrado no terminal, ex. `http://192.168.0.100:5173`).
 
-**Conta de demonstração:** `ana@familia.demo` / `Demo1234!` (papel Administrador) e `bruno@familia.demo` / `Demo1234!` (papel Membro), ambas na "Família Demo" já com um orçamento mensal e alguns movimentos de exemplo.
+**Contas de demonstração** (criadas pelo `npm run prisma:seed`):
+- Agregado **"Família Demo"** → `ana@familia.demo` / `Demo1234!` (Administrador) e `bruno@familia.demo` / `Demo1234!` (Membro), já com um orçamento mensal e alguns movimentos de exemplo.
+- **Gestor da aplicação** → email/password definidos em `GESTOR_EMAIL`/`GESTOR_PASSWORD` no `.env` (criado automaticamente no primeiro arranque do servidor).
 
 ## 2. Instalar como aplicação (PWA)
 
 No telemóvel (Android/Chrome): abrir a app no browser, tocar no menu (⋮) e escolher **"Instalar aplicação"** ou **"Adicionar ao ecrã principal"**. No iPhone (Safari): tocar no ícone de partilha e escolher **"Adicionar ao ecrã principal"**. No computador (Chrome/Edge): aparece um ícone de instalação (⊕) na barra de endereço. A partir daí a aplicação abre como um programa independente, com o seu próprio ícone, sem a barra do browser.
 
-## 3. Criar a sua família
+## 3. Como nasce um agregado familiar
 
-Na página inicial, escolher **"Criar agora"**. Preencher o nome da família, o seu nome, email e uma password (mínimo 8 caracteres). Fica automaticamente como **Administrador** dessa família — só administradores podem criar orçamentos, ajustar valores planeados e convidar novos membros; qualquer membro pode consultar tudo e registar movimentos do dia-a-dia.
+Não há registo público — ninguém cria uma conta sozinho na página de login. O processo é sempre:
+
+1. O **gestor da aplicação** entra em `/gestor/entrar` (link no fundo da página de login) com o email/password definidos em `GESTOR_EMAIL`/`GESTOR_PASSWORD`.
+2. Na página **"Agregados familiares"**, preenche o **nome do agregado** (ex.: `COSTAFILIPES`), e o nome/email/password do primeiro **Administrador** desse agregado, e toca em **"Criar agregado"**.
+3. O gestor entrega essas credenciais (nome do agregado + email + password) à pessoa que vai ser a Administradora — essa pessoa entra na página de login normal com esses três dados.
+
+A partir daí, esse Administrador pode entrar em **Família** e cadastrar mais membros (Administradores ou Membros) **do seu próprio agregado**, sem precisar do gestor outra vez — só a criação do agregado em si passa pelo gestor.
+
+O nome do agregado não é sensível a maiúsculas nem a acentos no login: "Costa Filipe", "costa filipe" e "COSTA FILIPE" identificam sempre o mesmo agregado.
 
 ## 4. Domínio 1 — Orçamento
 
@@ -80,6 +90,12 @@ Sim — se voltar a ficar abaixo do limiar (por exemplo, editou o valor planeado
 
 **Posso usar a aplicação sem internet?**
 A interface (PWA) fica instalada e abre offline, mas os dados são partilhados com o resto da família através do servidor — só é possível consultar/registar quando o telemóvel/computador consegue alcançar o servidor da aplicação (a mesma rede Wi-Fi de casa, ou a morada pública se um dia a família decidir alojá-la fora de casa).
+
+**Esqueci-me do nome do agregado ou das credenciais — o que faço?**
+Contacte o gestor da aplicação (quem geriu a instalação): ele consegue ver a lista de agregados existentes em `/gestor/agregados`, e — numa iteração futura — repor a password de um administrador. Por agora, a reposição de password ainda não está implementada.
+
+**Um administrador consegue criar outro agregado?**
+Não — só o gestor da aplicação cria agregados novos. Um administrador só gere membros dentro do seu próprio agregado.
 
 **Que moeda é usada?**
 Kwanza (AOA) por omissão, com formatação `123 456,00 Kz`, ajustável em `Familia.moeda` para outra moeda se necessário (a interface segue automaticamente qualquer alteração aí).

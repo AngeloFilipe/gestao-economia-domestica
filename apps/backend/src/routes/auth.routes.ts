@@ -2,21 +2,26 @@ import type { FastifyInstance } from "fastify";
 import type { ZodTypeProvider } from "fastify-type-provider-zod";
 import { z } from "zod";
 import {
+  AgregadoDTO,
   ConvidarMembroInput,
+  CriarAgregadoInput,
   ErroResposta,
+  LoginGestorInput,
   LoginInput,
-  RegistarFamiliaInput,
   SessaoResposta,
   UtilizadorPublico,
 } from "@ged/shared";
 import {
   ErroAutenticacao,
   autenticar,
+  autenticarGestor,
   convidarMembro,
+  criarAgregado,
+  listarAgregados,
   refrescarSessao,
-  registarFamilia,
   terminarSessao,
 } from "../services/auth.service.js";
+import { familiaIdObrigatoria } from "../lib/contexto.js";
 
 const NOME_COOKIE_REFRESH = "refresh_token";
 const OPCOES_COOKIE = {
@@ -29,29 +34,26 @@ export async function authRoutes(app: FastifyInstance) {
   const rotas = app.withTypeProvider<ZodTypeProvider>();
 
   rotas.post(
-    "/registar",
-    { schema: { body: RegistarFamiliaInput, response: { 200: SessaoResposta, 409: ErroResposta } } },
+    "/login",
+    { schema: { body: LoginInput, response: { 200: SessaoResposta, 401: ErroResposta } } },
     async (request, reply) => {
       try {
-        const { accessToken, refreshTokenBruto, utilizador } = await registarFamilia(
-          app.prisma,
-          request.body,
-        );
+        const { accessToken, refreshTokenBruto, utilizador } = await autenticar(app.prisma, request.body);
         reply.setCookie(NOME_COOKIE_REFRESH, refreshTokenBruto, OPCOES_COOKIE);
         return { accessToken, utilizador };
       } catch (erro) {
-        if (erro instanceof ErroAutenticacao) return reply.code(409).send({ mensagem: erro.message });
+        if (erro instanceof ErroAutenticacao) return reply.code(401).send({ mensagem: erro.message });
         throw erro;
       }
     },
   );
 
   rotas.post(
-    "/login",
-    { schema: { body: LoginInput, response: { 200: SessaoResposta, 401: ErroResposta } } },
+    "/gestor/login",
+    { schema: { body: LoginGestorInput, response: { 200: SessaoResposta, 401: ErroResposta } } },
     async (request, reply) => {
       try {
-        const { accessToken, refreshTokenBruto, utilizador } = await autenticar(app.prisma, request.body);
+        const { accessToken, refreshTokenBruto, utilizador } = await autenticarGestor(app.prisma, request.body);
         reply.setCookie(NOME_COOKIE_REFRESH, refreshTokenBruto, OPCOES_COOKIE);
         return { accessToken, utilizador };
       } catch (erro) {
@@ -98,7 +100,7 @@ export async function authRoutes(app: FastifyInstance) {
         familiaId: utilizador.familiaId,
         nome: utilizador.nome,
         email: utilizador.email,
-        papel: utilizador.papel as "ADMIN" | "MEMBRO",
+        papel: utilizador.papel as "GESTOR" | "ADMIN" | "MEMBRO",
         ativo: utilizador.ativo,
       };
     },
@@ -108,8 +110,9 @@ export async function authRoutes(app: FastifyInstance) {
     "/membros",
     { preHandler: app.autenticar, schema: { response: { 200: z.array(UtilizadorPublico) } } },
     async (request) => {
+      const familiaId = familiaIdObrigatoria(request);
       const membros = await app.prisma.utilizador.findMany({
-        where: { familiaId: request.utilizador!.familiaId },
+        where: { familiaId },
         orderBy: { criadoEm: "asc" },
       });
       return membros.map((m) => ({
@@ -117,7 +120,7 @@ export async function authRoutes(app: FastifyInstance) {
         familiaId: m.familiaId,
         nome: m.nome,
         email: m.email,
-        papel: m.papel as "ADMIN" | "MEMBRO",
+        papel: m.papel as "GESTOR" | "ADMIN" | "MEMBRO",
         ativo: m.ativo,
       }));
     },
@@ -131,7 +134,35 @@ export async function authRoutes(app: FastifyInstance) {
     },
     async (request, reply) => {
       try {
-        return await convidarMembro(app.prisma, request.utilizador!.familiaId, request.body);
+        const familiaId = familiaIdObrigatoria(request);
+        return await convidarMembro(app.prisma, familiaId, request.body);
+      } catch (erro) {
+        if (erro instanceof ErroAutenticacao) return reply.code(409).send({ mensagem: erro.message });
+        throw erro;
+      }
+    },
+  );
+
+  // --- Gestor da aplicação: cria agregados e o primeiro administrador de cada um ---
+
+  rotas.get(
+    "/gestor/agregados",
+    {
+      preHandler: [app.autenticar, app.exigirGestor],
+      schema: { response: { 200: z.array(AgregadoDTO) } },
+    },
+    async () => listarAgregados(app.prisma),
+  );
+
+  rotas.post(
+    "/gestor/agregados",
+    {
+      preHandler: [app.autenticar, app.exigirGestor],
+      schema: { body: CriarAgregadoInput, response: { 200: AgregadoDTO, 409: ErroResposta } },
+    },
+    async (request, reply) => {
+      try {
+        return await criarAgregado(app.prisma, request.body);
       } catch (erro) {
         if (erro instanceof ErroAutenticacao) return reply.code(409).send({ mensagem: erro.message });
         throw erro;
