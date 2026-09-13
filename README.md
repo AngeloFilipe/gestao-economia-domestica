@@ -1,5 +1,7 @@
 # Gestão de Economia Doméstica
 
+[![GitHub repo](https://img.shields.io/badge/GitHub-gestao--economia--domestica-181717?logo=github)](https://github.com/AngeloFilipe/gestao-economia-domestica)
+
 Aplicação web (PWA) para gestão financeira familiar, inspirada no documento do MINFIN/AGT
 "Domina as suas finanças ou as suas finanças o dominam?" — com três domínios: Orçamento,
 Registo Diário de despesas/receitas, e Relatórios & Alertas de risco de rutura orçamental.
@@ -23,5 +25,5 @@ npm run dev
 - Frontend (PWA): http://localhost:5173
 
 > A base de dados SQLite fica fora desta pasta (fora do Dropbox), em
-> `~/Library/Application Support/GestaoEconomiaDomestica/dev.db`, para evitar que o Dropbox
-> sincronize um ficheiro de base de dados vivo (risco de corrupção).
+> `~/.gestao-economia-domestica/dev.db`, para evitar que o Dropbox sincronize um ficheiro
+> de base de dados vivo (risco de corrupção).
