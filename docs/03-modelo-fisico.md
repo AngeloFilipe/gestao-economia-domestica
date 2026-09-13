@@ -40,11 +40,15 @@ nenhuma linha de código de negócio (o Zod schema já teria os valores certos).
 
 Não existe registo público. O ciclo de vida de uma conta é sempre um destes três:
 
-1. **GESTOR** — criado automaticamente pelo backend no arranque
-   (`garantirGestorInicial`, em `apps/backend/src/services/auth.service.ts`), a partir
-   de `GESTOR_EMAIL`/`GESTOR_PASSWORD` em `.env`, apenas se ainda não existir nenhum
-   utilizador com esse email. É a única conta com `familiaId = NULL`. Autentica-se em
-   `/api/auth/gestor/login` (só email+password — não tem agregado).
+1. **GESTOR** — a *primeira* conta de gestor é criada automaticamente pelo backend no
+   arranque (`garantirGestorInicial`, em `apps/backend/src/services/auth.service.ts`),
+   a partir de `GESTOR_EMAIL`/`GESTOR_PASSWORD` em `.env`, apenas se ainda não existir
+   nenhum utilizador com esse email — é a única forma de a aplicação ter um primeiro
+   gestor sem nenhum registo público. Daí em diante, **qualquer gestor pode criar mais
+   gestores** via `POST /api/auth/gestor/gestores` (`ConvidarGestorInput`) — são todos
+   pares entre si, sem hierarquia adicional. Todas as contas `GESTOR` têm
+   `familiaId = NULL`. Autenticam-se em `/api/auth/gestor/login` (só email+password —
+   não têm agregado).
 2. **ADMIN** — criado pelo gestor via `POST /api/auth/gestor/agregados`
    (`CriarAgregadoInput`), que cria a `Familia` e o seu primeiro `ADMIN` numa só
    operação.

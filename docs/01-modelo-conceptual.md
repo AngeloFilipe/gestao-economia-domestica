@@ -106,10 +106,12 @@ Filipe", "costa filipe" e "COSTA FILIPE" apontem sempre ao mesmo agregado (ver
 
 ### Utilizador
 Uma pessoa com acesso à aplicação. Tem um **papel**:
-- `GESTOR` — o gestor da aplicação. Não pertence a nenhum agregado (`familiaId = NULL`);
-  a sua única responsabilidade é criar novos agregados e o respetivo primeiro
-  administrador. Não há registo público — a primeira conta de gestor nasce a partir de
-  variáveis de ambiente no arranque do servidor (ver `docs/03-modelo-fisico.md`).
+- `GESTOR` — gestor da aplicação. Não pertence a nenhum agregado (`familiaId = NULL`);
+  a sua responsabilidade é criar novos agregados e o respetivo primeiro administrador,
+  e pode também cadastrar mais gestores (todos pares entre si, sem hierarquia). Não há
+  registo público — a primeira conta de gestor nasce a partir de variáveis de ambiente
+  no arranque do servidor (ver `docs/03-modelo-fisico.md`); as seguintes nascem de um
+  gestor já existente.
 - `ADMIN` — administrador de um agregado (criado pelo gestor, ou promovido por outro
   administrador do mesmo agregado). Pode criar orçamentos, ajustar linhas orçamentadas,
   e cadastrar mais membros (`ADMIN` ou `MEMBRO`) **dentro do seu próprio agregado**.

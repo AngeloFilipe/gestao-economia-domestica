@@ -1,6 +1,11 @@
-import { Outlet } from "react-router-dom";
+import { NavLink, Outlet } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import { IconeSair } from "./icones";
+
+const ITENS_NAV = [
+  { para: "/gestor/agregados", rotulo: "Agregados" },
+  { para: "/gestor/gestores", rotulo: "Gestores" },
+];
 
 export function GestorLayout() {
   const { utilizador, sair } = useAuth();
@@ -23,6 +28,21 @@ export function GestorLayout() {
           </button>
         </div>
       </header>
+      <nav className="flex gap-1 border-b border-slate-200 bg-white px-4 sm:px-8">
+        {ITENS_NAV.map(({ para, rotulo }) => (
+          <NavLink
+            key={para}
+            to={para}
+            className={({ isActive }) =>
+              `border-b-2 px-3 py-2.5 text-sm font-medium ${
+                isActive ? "border-marca-500 text-marca-600" : "border-transparent text-slate-500 hover:text-slate-700"
+              }`
+            }
+          >
+            {rotulo}
+          </NavLink>
+        ))}
+      </nav>
       <main className="mx-auto max-w-4xl p-4 sm:p-8">
         <Outlet />
       </main>

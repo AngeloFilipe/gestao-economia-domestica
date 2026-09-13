@@ -6,6 +6,7 @@ import { GestorLayout } from "./components/GestorLayout";
 import { LoginPage } from "./pages/LoginPage";
 import { GestorLoginPage } from "./pages/GestorLoginPage";
 import { GestorAgregadosPage } from "./pages/GestorAgregadosPage";
+import { GestorGestoresPage } from "./pages/GestorGestoresPage";
 import { OrcamentoListaPage } from "./pages/OrcamentoListaPage";
 import { OrcamentoNovoPage } from "./pages/OrcamentoNovoPage";
 import { OrcamentoDetalhePage } from "./pages/OrcamentoDetalhePage";
@@ -54,6 +55,7 @@ function AreaAutenticada() {
         <Route element={<GestorLayout />}>
           <Route index element={<Navigate to="/gestor/agregados" replace />} />
           <Route path="/gestor/agregados" element={<GestorAgregadosPage />} />
+          <Route path="/gestor/gestores" element={<GestorGestoresPage />} />
         </Route>
         <Route path="*" element={<Navigate to="/gestor/agregados" replace />} />
       </Routes>

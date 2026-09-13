@@ -30,6 +30,10 @@ Não há registo público — ninguém cria uma conta sozinho na página de logi
 
 A partir daí, esse Administrador pode entrar em **Família** e cadastrar mais membros (Administradores ou Membros) **do seu próprio agregado**, sem precisar do gestor outra vez — só a criação do agregado em si passa pelo gestor.
 
+### 3.1 Adicionar outro gestor da aplicação
+
+Se mais do que uma pessoa vai gerir a aplicação (criar agregados, etc.), qualquer gestor pode cadastrar outro: dentro da área do gestor, no separador **"Gestores"** (ao lado de "Agregados"), preencher nome, email e password e tocar em **"Adicionar gestor"**. Todos os gestores têm os mesmos poderes — não há um gestor "principal" distinto dos restantes.
+
 O nome do agregado não é sensível a maiúsculas nem a acentos no login: "Costa Filipe", "costa filipe" e "COSTA FILIPE" identificam sempre o mesmo agregado.
 
 ## 4. Domínio 1 — Orçamento
@@ -95,7 +99,7 @@ A interface (PWA) fica instalada e abre offline, mas os dados são partilhados c
 Contacte o gestor da aplicação (quem geriu a instalação): ele consegue ver a lista de agregados existentes em `/gestor/agregados`, e — numa iteração futura — repor a password de um administrador. Por agora, a reposição de password ainda não está implementada.
 
 **Um administrador consegue criar outro agregado?**
-Não — só o gestor da aplicação cria agregados novos. Um administrador só gere membros dentro do seu próprio agregado.
+Não — só um gestor da aplicação cria agregados novos. Um administrador só gere membros dentro do seu próprio agregado. Se for preciso mais do que uma pessoa a gerir a aplicação, um gestor pode cadastrar outro em `/gestor/gestores` (ver secção 3.1).
 
 **Que moeda é usada?**
 Kwanza (AOA) por omissão, com formatação `123 456,00 Kz`, ajustável em `Familia.moeda` para outra moeda se necessário (a interface segue automaticamente qualquer alteração aí).

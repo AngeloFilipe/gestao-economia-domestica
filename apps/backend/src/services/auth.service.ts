@@ -1,6 +1,7 @@
 import type { PrismaClient } from "@prisma/client";
 import type {
   AgregadoDTO,
+  ConvidarGestorInput,
   ConvidarMembroInput,
   CriarAgregadoInput,
   LoginGestorInput,
@@ -173,6 +174,31 @@ export async function convidarMembro(prisma: PrismaClient, familiaId: string, in
     },
   });
   return paraPublico(utilizador);
+}
+
+/** Um gestor existente cadastra outro gestor da aplicação — nenhum pertence a um agregado. */
+export async function convidarGestor(prisma: PrismaClient, input: ConvidarGestorInput) {
+  const jaExiste = await prisma.utilizador.findUnique({ where: { email: input.email } });
+  if (jaExiste) throw new ErroAutenticacao("Já existe uma conta com este email.");
+
+  const utilizador = await prisma.utilizador.create({
+    data: {
+      familiaId: null,
+      nome: input.nome,
+      email: input.email,
+      passwordHash: await hashPassword(input.password),
+      papel: "GESTOR",
+    },
+  });
+  return paraPublico(utilizador);
+}
+
+export async function listarGestores(prisma: PrismaClient): Promise<UtilizadorPublico[]> {
+  const gestores = await prisma.utilizador.findMany({
+    where: { papel: "GESTOR" },
+    orderBy: { criadoEm: "asc" },
+  });
+  return gestores.map(paraPublico);
 }
 
 /**

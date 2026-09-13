@@ -3,6 +3,7 @@ import type { ZodTypeProvider } from "fastify-type-provider-zod";
 import { z } from "zod";
 import {
   AgregadoDTO,
+  ConvidarGestorInput,
   ConvidarMembroInput,
   CriarAgregadoInput,
   ErroResposta,
@@ -15,9 +16,11 @@ import {
   ErroAutenticacao,
   autenticar,
   autenticarGestor,
+  convidarGestor,
   convidarMembro,
   criarAgregado,
   listarAgregados,
+  listarGestores,
   refrescarSessao,
   terminarSessao,
 } from "../services/auth.service.js";
@@ -163,6 +166,31 @@ export async function authRoutes(app: FastifyInstance) {
     async (request, reply) => {
       try {
         return await criarAgregado(app.prisma, request.body);
+      } catch (erro) {
+        if (erro instanceof ErroAutenticacao) return reply.code(409).send({ mensagem: erro.message });
+        throw erro;
+      }
+    },
+  );
+
+  rotas.get(
+    "/gestor/gestores",
+    {
+      preHandler: [app.autenticar, app.exigirGestor],
+      schema: { response: { 200: z.array(UtilizadorPublico) } },
+    },
+    async () => listarGestores(app.prisma),
+  );
+
+  rotas.post(
+    "/gestor/gestores",
+    {
+      preHandler: [app.autenticar, app.exigirGestor],
+      schema: { body: ConvidarGestorInput, response: { 200: UtilizadorPublico, 409: ErroResposta } },
+    },
+    async (request, reply) => {
+      try {
+        return await convidarGestor(app.prisma, request.body);
       } catch (erro) {
         if (erro instanceof ErroAutenticacao) return reply.code(409).send({ mensagem: erro.message });
         throw erro;

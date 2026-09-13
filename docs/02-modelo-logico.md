@@ -39,10 +39,10 @@ real em SQLite/Prisma está em `03-modelo-fisico.md` — este documento descreve
 | ativo | boolean | NN, omissão `true` |
 | criadoEm | datetime | NN |
 
-*Nota:* não há registo público. Um `GESTOR` nasce a partir de variáveis de ambiente no
-arranque do servidor (ver `03-modelo-fisico.md`); um `ADMIN` nasce quando o gestor cria
-um agregado; um `MEMBRO` (ou outro `ADMIN`) nasce quando um `ADMIN` do agregado o
-cadastra.
+*Nota:* não há registo público. O primeiro `GESTOR` nasce a partir de variáveis de
+ambiente no arranque do servidor (ver `03-modelo-fisico.md`); qualquer `GESTOR` pode
+depois cadastrar mais gestores; um `ADMIN` nasce quando um gestor cria um agregado; um
+`MEMBRO` (ou outro `ADMIN`) nasce quando um `ADMIN` do agregado o cadastra.
 
 ### refresh_tokens
 | Coluna | Tipo | Notas |

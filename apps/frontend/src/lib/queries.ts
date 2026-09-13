@@ -3,6 +3,7 @@ import type {
   AgregadoDTO,
   AlertaDTO,
   CategoriaDTO,
+  ConvidarGestorInput,
   ConvidarMembroInput,
   CriarAgregadoInput,
   CriarMovimentoInput,
@@ -148,6 +149,18 @@ export function useCriarAgregado() {
   return useMutation({
     mutationFn: (input: CriarAgregadoInput) => api.post<AgregadoDTO>("/auth/gestor/agregados", input),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ["agregados"] }),
+  });
+}
+
+export function useGestores() {
+  return useQuery({ queryKey: ["gestores"], queryFn: () => api.get<UtilizadorPublico[]>("/auth/gestor/gestores") });
+}
+
+export function useConvidarGestor() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (input: ConvidarGestorInput) => api.post<UtilizadorPublico>("/auth/gestor/gestores", input),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["gestores"] }),
   });
 }
 

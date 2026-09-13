@@ -34,6 +34,14 @@ export const ConvidarMembroInput = z.object({
 });
 export type ConvidarMembroInput = z.infer<typeof ConvidarMembroInput>;
 
+/** Um gestor existente cadastra outro gestor da aplicação (nenhum pertence a um agregado). */
+export const ConvidarGestorInput = z.object({
+  nome: z.string().min(2).max(120),
+  email: z.string().email(),
+  password: z.string().min(8).max(72),
+});
+export type ConvidarGestorInput = z.infer<typeof ConvidarGestorInput>;
+
 export const UtilizadorPublico = z.object({
   id: z.string(),
   familiaId: z.string().nullable(),
