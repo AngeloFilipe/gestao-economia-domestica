@@ -1,0 +1,27 @@
+# Gestão de Economia Doméstica
+
+Aplicação web (PWA) para gestão financeira familiar, inspirada no documento do MINFIN/AGT
+"Domina as suas finanças ou as suas finanças o dominam?" — com três domínios: Orçamento,
+Registo Diário de despesas/receitas, e Relatórios & Alertas de risco de rutura orçamental.
+
+Ver `docs/` para a filosofia da aplicação e os modelos conceptual, lógico e físico da base
+de dados, e o manual do utilizador.
+
+## Arrancar em desenvolvimento
+
+Pré-requisitos: Node.js 20+ (instalado via Homebrew: `brew install node`).
+
+```bash
+npm install
+cp apps/backend/.env.example apps/backend/.env
+npm run prisma:migrate
+npm run prisma:seed
+npm run dev
+```
+
+- Backend (API): http://localhost:3333 (documentação OpenAPI em `/docs`)
+- Frontend (PWA): http://localhost:5173
+
+> A base de dados SQLite fica fora desta pasta (fora do Dropbox), em
+> `~/Library/Application Support/GestaoEconomiaDomestica/dev.db`, para evitar que o Dropbox
+> sincronize um ficheiro de base de dados vivo (risco de corrupção).

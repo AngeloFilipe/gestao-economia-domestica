@@ -1,0 +1,231 @@
+// Modelo lógico/físico da Gestão de Economia Doméstica.
+//
+// Nota de desenho: o conector SQLite do Prisma não suporta o bloco `enum` (só
+// Postgres/MySQL/CockroachDB suportam enums nativos). Os campos que seriam
+// enums (papel, tipo, nivel, estado, ambito, método de pagamento) ficam como
+// `String`, com o conjunto de valores válidos definido uma única vez em
+// `packages/shared/src/enums.ts` e validado com Zod na fronteira da API.
+// Ver docs/03-modelo-fisico.md para a justificação completa.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+// ---------------------------------------------------------------------------
+// Família e utilizadores
+// ---------------------------------------------------------------------------
+
+model Familia {
+  id       String   @id @default(cuid())
+  nome     String
+  moeda    String   @default("AOA")
+  criadoEm DateTime @default(now())
+
+  utilizadores      Utilizador[]
+  categorias        Categoria[]
+  periodosOrcamento PeriodoOrcamento[]
+  movimentos        Movimento[]
+  regrasAlerta      RegraAlerta[]
+  alertas           Alerta[]
+
+  @@map("familias")
+}
+
+/// papel: "ADMIN" | "MEMBRO"
+model Utilizador {
+  id           String   @id @default(cuid())
+  familiaId    String
+  familia      Familia  @relation(fields: [familiaId], references: [id])
+  nome         String
+  email        String   @unique
+  passwordHash String
+  papel        String   @default("MEMBRO")
+  ativo        Boolean  @default(true)
+  criadoEm     DateTime @default(now())
+
+  refreshTokens            RefreshToken[]
+  movimentosRegistados     Movimento[]        @relation("MovimentoRegistadoPor")
+  periodosOrcamentoCriados PeriodoOrcamento[] @relation("PeriodoCriadoPor")
+  alertasLidos             Alerta[]           @relation("AlertaLidoPor")
+
+  @@index([familiaId])
+  @@map("utilizadores")
+}
+
+model RefreshToken {
+  id           String    @id @default(cuid())
+  utilizadorId String
+  utilizador   Utilizador @relation(fields: [utilizadorId], references: [id], onDelete: Cascade)
+  tokenHash    String    @unique
+  criadoEm     DateTime  @default(now())
+  expiraEm     DateTime
+  revogadoEm   DateTime?
+
+  @@index([utilizadorId])
+  @@map("refresh_tokens")
+}
+
+// ---------------------------------------------------------------------------
+// Categorias (hierarquia Grupo > Subcategoria > Rubrica, a partir da
+// planilha-modelo do MINFIN)
+// ---------------------------------------------------------------------------
+
+/// nivel: "GRUPO" | "SUBCATEGORIA" | "RUBRICA"
+/// tipo: "RECEITA" | "DESPESA"
+model Categoria {
+  id        String     @id @default(cuid())
+  familiaId String?
+  familia   Familia?   @relation(fields: [familiaId], references: [id])
+  parentId  String?
+  parent    Categoria? @relation("CategoriaHierarquia", fields: [parentId], references: [id])
+  filhos    Categoria[] @relation("CategoriaHierarquia")
+  nome      String
+  nivel     String
+  tipo      String
+  ordem     Int        @default(0)
+  ativo     Boolean    @default(true)
+
+  linhasOrcamentadas LinhaOrcamentada[]
+  movimentos         Movimento[]
+  regrasAlerta       RegraAlerta[]
+  alertas            Alerta[]
+
+  @@index([familiaId])
+  @@index([parentId])
+  @@map("categorias")
+}
+
+// ---------------------------------------------------------------------------
+// Domínio 1 — Orçamento
+// ---------------------------------------------------------------------------
+
+/// tipo: "MENSAL" | "TRIMESTRAL" | "SEMESTRAL" | "ANUAL"
+/// estado: "RASCUNHO" | "ATIVO" | "FECHADO"
+model PeriodoOrcamento {
+  id          String   @id @default(cuid())
+  familiaId   String
+  familia     Familia  @relation(fields: [familiaId], references: [id])
+  tipo        String
+  referencia  String
+  dataInicio  DateTime
+  dataFim     DateTime
+  estado      String   @default("RASCUNHO")
+  criadoPorId String
+  criadoPor   Utilizador @relation("PeriodoCriadoPor", fields: [criadoPorId], references: [id])
+  criadoEm    DateTime @default(now())
+
+  linhas  LinhaOrcamentada[]
+  alertas Alerta[]
+
+  @@unique([familiaId, tipo, referencia])
+  @@index([familiaId])
+  @@map("periodos_orcamento")
+}
+
+model LinhaOrcamentada {
+  id                 String           @id @default(cuid())
+  periodoOrcamentoId String
+  periodoOrcamento   PeriodoOrcamento @relation(fields: [periodoOrcamentoId], references: [id], onDelete: Cascade)
+  categoriaId        String
+  categoria          Categoria        @relation(fields: [categoriaId], references: [id])
+  valorPlaneado      Float
+  observacoes        String?
+
+  movimentos Movimento[]
+
+  @@unique([periodoOrcamentoId, categoriaId])
+  @@index([categoriaId])
+  @@map("linhas_orcamentadas")
+}
+
+// ---------------------------------------------------------------------------
+// Domínio 2 — Registo diário de movimentos
+// ---------------------------------------------------------------------------
+
+/// tipo: "RECEITA" | "DESPESA"
+/// metodoPagamento: "DINHEIRO" | "TRANSFERENCIA" | "CARTAO_DEBITO" | "CARTAO_CREDITO" | "MULTICAIXA" | "OUTRO"
+///
+/// Nota: propositadamente NÃO existe uma FK direta para PeriodoOrcamento aqui.
+/// Um movimento pertence a um período apenas pela data cair no intervalo
+/// [dataInicio, dataFim] desse período — isto permite que o mesmo movimento
+/// conte simultaneamente para o relatório mensal, trimestral, semestral e
+/// anual sem duplicar dados. `linhaOrcamentadaId` continua a existir para
+/// ligar um movimento a uma rubrica orçamentada específica (torna-o
+/// "previsto"); `linhaOrcamentadaId = NULL` é exatamente o caso "não prevista".
+model Movimento {
+  id                 String            @id @default(cuid())
+  familiaId          String
+  familia            Familia           @relation(fields: [familiaId], references: [id])
+  data               DateTime
+  valor              Float
+  tipo               String
+  categoriaId        String
+  categoria          Categoria         @relation(fields: [categoriaId], references: [id])
+  linhaOrcamentadaId String?
+  linhaOrcamentada   LinhaOrcamentada? @relation(fields: [linhaOrcamentadaId], references: [id], onDelete: SetNull)
+  descricao          String?
+  metodoPagamento    String?
+  registadoPorId     String
+  registadoPor       Utilizador        @relation("MovimentoRegistadoPor", fields: [registadoPorId], references: [id])
+  criadoEm           DateTime          @default(now())
+
+  @@index([familiaId, data])
+  @@index([categoriaId])
+  @@index([linhaOrcamentadaId])
+  @@map("movimentos")
+}
+
+// ---------------------------------------------------------------------------
+// Domínio 3 — Relatórios e alertas
+// ---------------------------------------------------------------------------
+
+/// ambito: "CATEGORIA" | "GRUPO" | "ORCAMENTO_GLOBAL"
+model RegraAlerta {
+  id               String     @id @default(cuid())
+  familiaId        String
+  familia          Familia    @relation(fields: [familiaId], references: [id])
+  ambito           String
+  categoriaId      String?
+  categoria        Categoria? @relation(fields: [categoriaId], references: [id])
+  limiarAvisoPct   Float      @default(80)
+  limiarCriticoPct Float      @default(100)
+  ativo            Boolean    @default(true)
+  criadoEm         DateTime   @default(now())
+
+  @@index([familiaId])
+  @@map("regras_alerta")
+}
+
+/// nivel: "AVISO" | "CRITICO" | "RISCO_RUTURA"
+///
+/// Nota: a idempotência (não duplicar o mesmo alerta) é garantida em
+/// aplicação (findFirst + update-ou-create dentro de uma transação), e não
+/// por uma unique constraint em (periodoOrcamentoId, categoriaId, nivel),
+/// porque o SQLite trata cada NULL como distinto num índice único — o que
+/// quebraria a deduplicação para alertas de âmbito ORCAMENTO_GLOBAL
+/// (categoriaId = NULL).
+model Alerta {
+  id                 String           @id @default(cuid())
+  familiaId          String
+  familia            Familia          @relation(fields: [familiaId], references: [id])
+  periodoOrcamentoId String
+  periodoOrcamento   PeriodoOrcamento @relation(fields: [periodoOrcamentoId], references: [id], onDelete: Cascade)
+  categoriaId        String?
+  categoria          Categoria?       @relation(fields: [categoriaId], references: [id])
+  nivel              String
+  mensagem           String
+  valorReferencia    Float?
+  criadoEm           DateTime         @default(now())
+  lidoEm             DateTime?
+  lidoPorId          String?
+  lidoPor            Utilizador?      @relation("AlertaLidoPor", fields: [lidoPorId], references: [id])
+
+  @@index([familiaId])
+  @@index([periodoOrcamentoId, categoriaId, nivel])
+  @@map("alertas")
+}
