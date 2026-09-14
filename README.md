@@ -7,9 +7,11 @@ Aplicação web (PWA) para gestão financeira familiar, inspirada no documento d
 Registo Diário de despesas/receitas, e Relatórios & Alertas de risco de rutura orçamental.
 
 Suporta vários agregados familiares (ex.: "COSTAFILIPES"), cada um identificado pelo seu
-nome no login. Não há registo público: um **gestor da aplicação** cria cada agregado e o
-seu primeiro administrador; esse administrador pode depois cadastrar mais membros do seu
-próprio agregado.
+nome no login. Qualquer Chefe de Agregado cria o seu próprio agregado sozinho, na página
+de login ("Criar o seu agregado") — fica automaticamente como **Gestor do Agregado**
+(quem paga as contas) e pode depois cadastrar mais membros do seu próprio agregado. Existe
+também um papel separado de **gestor da aplicação**, sem agregado próprio, para suporte
+(criar um agregado em nome de alguém, etc.) — não é preciso para o uso normal.
 
 Ver `docs/` para a filosofia da aplicação e os modelos conceptual, lógico e físico da base
 de dados, e o manual do utilizador.
@@ -29,9 +31,9 @@ npm run dev
 - Backend (API): http://localhost:3333 (documentação OpenAPI em `/docs`)
 - Frontend (PWA): http://localhost:5173
 
-A conta do **gestor da aplicação** é criada automaticamente no arranque a partir de
-`GESTOR_EMAIL`/`GESTOR_PASSWORD` em `apps/backend/.env` (ver `.env.example`) — é com essa
-conta, em `/gestor/entrar`, que se cria cada agregado familiar e o seu administrador.
+A conta do **gestor da aplicação** (papel de suporte, opcional para o uso normal) é
+criada automaticamente no arranque a partir de `GESTOR_EMAIL`/`GESTOR_PASSWORD` em
+`apps/backend/.env` (ver `.env.example`) — entra-se em `/gestor/entrar`.
 
 > A base de dados SQLite fica fora desta pasta (fora do Dropbox), em
 > `~/.gestao-economia-domestica/dev.db`, para evitar que o Dropbox sincronize um ficheiro

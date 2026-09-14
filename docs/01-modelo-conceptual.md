@@ -105,18 +105,20 @@ Filipe", "costa filipe" e "COSTA FILIPE" apontem sempre ao mesmo agregado (ver
 `apps/backend/src/lib/agregado.ts`).
 
 ### Utilizador
-Uma pessoa com acesso à aplicação. Tem um **papel**:
-- `GESTOR` — gestor da aplicação. Não pertence a nenhum agregado (`familiaId = NULL`);
-  a sua responsabilidade é criar novos agregados e o respetivo primeiro administrador,
-  e pode também cadastrar mais gestores (todos pares entre si, sem hierarquia). Não há
-  registo público — a primeira conta de gestor nasce a partir de variáveis de ambiente
-  no arranque do servidor (ver `docs/03-modelo-fisico.md`); as seguintes nascem de um
-  gestor já existente.
-- `ADMIN` — administrador de um agregado (criado pelo gestor, ou promovido por outro
-  administrador do mesmo agregado). Pode criar orçamentos, ajustar linhas orçamentadas,
-  e cadastrar mais membros (`ADMIN` ou `MEMBRO`) **dentro do seu próprio agregado**.
-- `MEMBRO` — pode registar movimentos e consultar tudo no seu agregado, mas não alterar
-  o plano nem cadastrar outros membros.
+Uma pessoa com acesso à aplicação. Tem um **papel** (valor guardado na base de dados —
+a coluna "Rótulo na interface" mostra como aparece ao utilizador, para não confundir
+com o papel `GESTOR`, que é outra coisa):
+
+| Valor (`papel`) | Rótulo na interface | Quem é |
+|---|---|---|
+| `GESTOR` | "Gestor da aplicação" | Não pertence a nenhum agregado (`familiaId = NULL`). Cadastra agregados por conta de outrem (ex.: suporte) e pode cadastrar mais gestores — todos pares entre si, sem hierarquia. A primeira conta nasce de variáveis de ambiente no arranque (ver `docs/03-modelo-fisico.md`); as seguintes, de um gestor já existente. |
+| `ADMIN` | **"Gestor do Agregado"** | O "Chefe de Agregado" — pai, mãe, ou quem for responsável por pagar as contas dessa família. **Auto-regista-se** (`POST /api/auth/registar`, ecrã "Criar o seu agregado"): não precisa de nenhum `GESTOR` para nascer. Ao auto-registar-se, cria o seu próprio agregado (sugerindo o nome; a aplicação sugere uma alternativa se já estiver ocupado) e fica automaticamente `ADMIN` desse agregado, com o `nome` igual ao email indicado. Pode criar orçamentos, ajustar linhas orçamentadas, e cadastrar mais membros (`ADMIN` ou `MEMBRO`) **dentro do seu próprio agregado**. |
+| `MEMBRO` | "Membro" | Pode registar movimentos e consultar tudo no seu agregado, mas não alterar o plano nem cadastrar outros membros. Só nasce por um `ADMIN` do mesmo agregado. |
+
+O papel `GESTOR` da aplicação continua a poder criar um agregado manualmente
+(`POST /api/auth/gestor/agregados`) — útil para suporte a alguém que não consiga
+auto-registar-se — mas deixou de ser o único caminho: o caminho normal, para as
+famílias reais que usam a aplicação, é o auto-registo.
 
 Um `ADMIN`/`MEMBRO` pertence a exatamente um agregado; um `GESTOR` a nenhum.
 

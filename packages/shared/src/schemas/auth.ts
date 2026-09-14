@@ -25,6 +25,23 @@ export const CriarAgregadoInput = z.object({
 });
 export type CriarAgregadoInput = z.infer<typeof CriarAgregadoInput>;
 
+/**
+ * Auto-registo: o "Chefe de Agregado" cria o seu próprio agregado, sem
+ * depender do gestor da aplicação. Fica automaticamente como "Gestor do
+ * Agregado" (papel ADMIN) — o nome de utilizador é o seu email; o nome do
+ * agregado é sugerido por ele próprio (a API sugere uma alternativa se já
+ * estiver ocupado). A confirmação da password (escrita duas vezes) é
+ * validada no serviço, não aqui, para manter este schema como um ZodObject
+ * simples e compatível com a geração automática de OpenAPI.
+ */
+export const RegistarAgregadoInput = z.object({
+  email: z.string().email(),
+  password: z.string().min(8).max(72),
+  confirmarPassword: z.string().min(8).max(72),
+  nomeAgregado: z.string().min(2).max(60),
+});
+export type RegistarAgregadoInput = z.infer<typeof RegistarAgregadoInput>;
+
 /** Um administrador de agregado cadastra mais membros no seu próprio agregado. */
 export const ConvidarMembroInput = z.object({
   nome: z.string().min(2).max(120),

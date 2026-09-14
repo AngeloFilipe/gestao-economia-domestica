@@ -10,6 +10,8 @@ export class ErroApi extends Error {
   constructor(
     public status: number,
     mensagem: string,
+    /** Presente quando o backend sugere uma alternativa (ex.: nome de agregado já ocupado). */
+    public sugestao?: string,
   ) {
     super(mensagem);
   }
@@ -71,7 +73,7 @@ export async function pedidoApi<T>(caminho: string, opcoes: OpcoesPedido = {}): 
   const dados = texto ? JSON.parse(texto) : undefined;
 
   if (!resposta.ok) {
-    throw new ErroApi(resposta.status, dados?.mensagem ?? "Ocorreu um erro inesperado.");
+    throw new ErroApi(resposta.status, dados?.mensagem ?? "Ocorreu um erro inesperado.", dados?.sugestao);
   }
 
   return dados as T;

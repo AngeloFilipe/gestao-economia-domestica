@@ -6,6 +6,11 @@ import { useAuth } from "../context/AuthContext";
 import { useConvidarMembro, useMembros } from "../lib/queries";
 import { ErroApi } from "../lib/api";
 
+const ROTULO_PAPEL: Record<string, string> = {
+  ADMIN: "Gestor do Agregado",
+  MEMBRO: "Membro",
+};
+
 export function MembrosPage() {
   const { utilizador } = useAuth();
   const { data: membros } = useMembros();
@@ -49,7 +54,9 @@ export function MembrosPage() {
               <p className="text-sm font-medium text-slate-700">{m.nome}</p>
               <p className="text-xs text-slate-400">{m.email}</p>
             </div>
-            <span className="rounded-full bg-slate-100 px-2 py-0.5 text-xs font-medium text-slate-600">{m.papel}</span>
+            <span className="rounded-full bg-slate-100 px-2 py-0.5 text-xs font-medium text-slate-600">
+              {ROTULO_PAPEL[m.papel] ?? m.papel}
+            </span>
           </div>
         ))}
       </div>
@@ -85,7 +92,7 @@ export function MembrosPage() {
               <label className="mb-1 block text-xs font-medium text-slate-500">Papel</label>
               <select className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm" {...register("papel")}>
                 <option value="MEMBRO">Membro</option>
-                <option value="ADMIN">Administrador</option>
+                <option value="ADMIN">Gestor do Agregado</option>
               </select>
             </div>
 

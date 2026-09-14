@@ -9,11 +9,13 @@ import {
   ErroResposta,
   LoginGestorInput,
   LoginInput,
+  RegistarAgregadoInput,
   SessaoResposta,
   UtilizadorPublico,
 } from "@ged/shared";
 import {
   ErroAutenticacao,
+  ErroNomeAgregadoOcupado,
   autenticar,
   autenticarGestor,
   convidarGestor,
@@ -22,6 +24,7 @@ import {
   listarAgregados,
   listarGestores,
   refrescarSessao,
+  registarAgregado,
   terminarSessao,
 } from "../services/auth.service.js";
 import { familiaIdObrigatoria } from "../lib/contexto.js";
@@ -46,6 +49,24 @@ export async function authRoutes(app: FastifyInstance) {
         return { accessToken, utilizador };
       } catch (erro) {
         if (erro instanceof ErroAutenticacao) return reply.code(401).send({ mensagem: erro.message });
+        throw erro;
+      }
+    },
+  );
+
+  rotas.post(
+    "/registar",
+    { schema: { body: RegistarAgregadoInput, response: { 200: SessaoResposta, 409: ErroResposta } } },
+    async (request, reply) => {
+      try {
+        const { accessToken, refreshTokenBruto, utilizador } = await registarAgregado(app.prisma, request.body);
+        reply.setCookie(NOME_COOKIE_REFRESH, refreshTokenBruto, OPCOES_COOKIE);
+        return { accessToken, utilizador };
+      } catch (erro) {
+        if (erro instanceof ErroNomeAgregadoOcupado) {
+          return reply.code(409).send({ mensagem: erro.message, sugestao: erro.sugestao });
+        }
+        if (erro instanceof ErroAutenticacao) return reply.code(409).send({ mensagem: erro.message });
         throw erro;
       }
     },
@@ -167,6 +188,9 @@ export async function authRoutes(app: FastifyInstance) {
       try {
         return await criarAgregado(app.prisma, request.body);
       } catch (erro) {
+        if (erro instanceof ErroNomeAgregadoOcupado) {
+          return reply.code(409).send({ mensagem: erro.message, sugestao: erro.sugestao });
+        }
         if (erro instanceof ErroAutenticacao) return reply.code(409).send({ mensagem: erro.message });
         throw erro;
       }

@@ -4,6 +4,7 @@ import { useAuth } from "./context/AuthContext";
 import { Layout } from "./components/Layout";
 import { GestorLayout } from "./components/GestorLayout";
 import { LoginPage } from "./pages/LoginPage";
+import { RegistarPage } from "./pages/RegistarPage";
 import { GestorLoginPage } from "./pages/GestorLoginPage";
 import { GestorAgregadosPage } from "./pages/GestorAgregadosPage";
 import { GestorGestoresPage } from "./pages/GestorGestoresPage";
@@ -90,6 +91,7 @@ export default function App() {
   return (
     <Routes>
       <Route path="/login" element={<RotaPublica><LoginPage /></RotaPublica>} />
+      <Route path="/registar" element={<RotaPublica><RegistarPage /></RotaPublica>} />
       <Route path="/gestor/entrar" element={<RotaPublica><GestorLoginPage /></RotaPublica>} />
       <Route
         path="/*"

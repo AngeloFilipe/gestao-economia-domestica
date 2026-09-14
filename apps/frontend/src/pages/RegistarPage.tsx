@@ -2,35 +2,51 @@ import { useState } from "react";
 import { Link } from "react-router-dom";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { LoginInput } from "@ged/shared";
+import { RegistarAgregadoInput } from "@ged/shared";
 import { useAuth } from "../context/AuthContext";
 import { ErroApi } from "../lib/api";
 
-export function LoginPage() {
-  const { entrar } = useAuth();
+export function RegistarPage() {
+  const { registar } = useAuth();
   const [erro, setErro] = useState<string | null>(null);
+  const [sugestao, setSugestao] = useState<string | null>(null);
   const {
     register,
     handleSubmit,
+    setValue,
     formState: { errors, isSubmitting },
-  } = useForm<LoginInput>({ resolver: zodResolver(LoginInput) });
+  } = useForm<RegistarAgregadoInput>({ resolver: zodResolver(RegistarAgregadoInput) });
 
-  async function aoSubmeter(dados: LoginInput) {
+  async function aoSubmeter(dados: RegistarAgregadoInput) {
     setErro(null);
+    setSugestao(null);
+
+    if (dados.password !== dados.confirmarPassword) {
+      setErro("As passwords não coincidem.");
+      return;
+    }
+
     try {
-      await entrar(dados);
+      await registar(dados);
     } catch (e) {
-      setErro(e instanceof ErroApi ? e.message : "Não foi possível iniciar sessão.");
+      if (e instanceof ErroApi) {
+        setErro(e.message);
+        setSugestao(e.sugestao ?? null);
+      } else {
+        setErro("Não foi possível criar o agregado.");
+      }
     }
   }
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-marca-50 px-4">
+    <div className="flex min-h-screen items-center justify-center bg-marca-50 px-4 py-8">
       <div className="w-full max-w-sm rounded-2xl bg-white p-8 shadow-sm">
         <div className="mb-6 flex flex-col items-center gap-2">
           <img src="/pwa-192.png" alt="" className="h-14 w-14 rounded-xl" />
-          <h1 className="text-lg font-semibold text-slate-800">Gestão de Economia Doméstica</h1>
-          <p className="text-center text-sm text-slate-500">Entre para gerir o orçamento do seu agregado.</p>
+          <h1 className="text-lg font-semibold text-slate-800">Criar o seu agregado</h1>
+          <p className="text-center text-sm text-slate-500">
+            Torna-se automaticamente o Gestor do Agregado — quem paga as contas.
+          </p>
         </div>
 
         <form onSubmit={handleSubmit(aoSubmeter)} className="space-y-4">
@@ -39,13 +55,12 @@ export function LoginPage() {
             <input
               className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-marca-500 focus:outline-none focus:ring-1 focus:ring-marca-500"
               placeholder="Ex.: COSTAFILIPES"
-              autoCapitalize="characters"
               {...register("nomeAgregado")}
             />
             {errors.nomeAgregado && <p className="mt-1 text-xs text-red-600">{errors.nomeAgregado.message}</p>}
           </div>
           <div>
-            <label className="mb-1 block text-sm font-medium text-slate-700">Email</label>
+            <label className="mb-1 block text-sm font-medium text-slate-700">O seu email</label>
             <input
               type="email"
               className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-marca-500 focus:outline-none focus:ring-1 focus:ring-marca-500"
@@ -62,30 +77,50 @@ export function LoginPage() {
             />
             {errors.password && <p className="mt-1 text-xs text-red-600">{errors.password.message}</p>}
           </div>
+          <div>
+            <label className="mb-1 block text-sm font-medium text-slate-700">Confirmar password</label>
+            <input
+              type="password"
+              className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-marca-500 focus:outline-none focus:ring-1 focus:ring-marca-500"
+              {...register("confirmarPassword")}
+            />
+            {errors.confirmarPassword && (
+              <p className="mt-1 text-xs text-red-600">{errors.confirmarPassword.message}</p>
+            )}
+          </div>
 
-          {erro && <p className="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700">{erro}</p>}
+          {erro && (
+            <div className="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700">
+              <p>{erro}</p>
+              {sugestao && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setValue("nomeAgregado", sugestao);
+                    setErro(null);
+                    setSugestao(null);
+                  }}
+                  className="mt-1 font-medium underline underline-offset-2 hover:text-red-800"
+                >
+                  Usar sugestão: "{sugestao}"
+                </button>
+              )}
+            </div>
+          )}
 
           <button
             type="submit"
             disabled={isSubmitting}
             className="w-full rounded-lg bg-marca-500 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-marca-600 disabled:opacity-60"
           >
-            {isSubmitting ? "A entrar…" : "Entrar"}
+            {isSubmitting ? "A criar…" : "Criar agregado"}
           </button>
         </form>
 
         <p className="mt-4 text-center text-sm text-slate-500">
-          É o Chefe do Agregado?{" "}
-          <Link to="/registar" className="font-medium text-marca-600 hover:underline">
-            Criar o seu agregado
-          </Link>
-        </p>
-        <p className="mt-3 rounded-lg bg-slate-50 px-3 py-2 text-center text-xs text-slate-400">
-          Demo: agregado "Família Demo" · ana@familia.demo / Demo1234!
-        </p>
-        <p className="mt-4 text-center text-xs">
-          <Link to="/gestor/entrar" className="text-slate-400 hover:text-marca-600 hover:underline">
-            Entrar como gestor da aplicação
+          Já tem um agregado?{" "}
+          <Link to="/login" className="font-medium text-marca-600 hover:underline">
+            Entrar
           </Link>
         </p>
       </div>

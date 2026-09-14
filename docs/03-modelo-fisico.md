@@ -38,24 +38,37 @@ nenhuma linha de código de negócio (o Zod schema já teria os valores certos).
 
 ## Multi-agregado, gestor da aplicação, e login por nome do agregado
 
-Não existe registo público. O ciclo de vida de uma conta é sempre um destes três:
+Não existe registo público para o papel `GESTOR`. Para o papel `ADMIN` ("Gestor do
+Agregado" na interface) existe, sim, auto-registo — é o caminho normal para uma família
+real começar a usar a aplicação. O ciclo de vida de uma conta é um destes quatro:
 
-1. **GESTOR** — a *primeira* conta de gestor é criada automaticamente pelo backend no
-   arranque (`garantirGestorInicial`, em `apps/backend/src/services/auth.service.ts`),
-   a partir de `GESTOR_EMAIL`/`GESTOR_PASSWORD` em `.env`, apenas se ainda não existir
-   nenhum utilizador com esse email — é a única forma de a aplicação ter um primeiro
-   gestor sem nenhum registo público. Daí em diante, **qualquer gestor pode criar mais
-   gestores** via `POST /api/auth/gestor/gestores` (`ConvidarGestorInput`) — são todos
-   pares entre si, sem hierarquia adicional. Todas as contas `GESTOR` têm
-   `familiaId = NULL`. Autenticam-se em `/api/auth/gestor/login` (só email+password —
-   não têm agregado).
-2. **ADMIN** — criado pelo gestor via `POST /api/auth/gestor/agregados`
-   (`CriarAgregadoInput`), que cria a `Familia` e o seu primeiro `ADMIN` numa só
-   operação.
-3. **MEMBRO** (ou outro `ADMIN`) — criado por um `ADMIN` já existente do mesmo
-   agregado, via `POST /api/auth/membros` (inalterado desde a versão anterior deste
-   documento) — continua a ser o próprio agregado a gerir o seu crescimento, só a
-   *criação do agregado em si* está centralizada no gestor.
+1. **GESTOR (primeira conta)** — criada automaticamente pelo backend no arranque
+   (`garantirGestorInicial`, em `apps/backend/src/services/auth.service.ts`), a partir
+   de `GESTOR_EMAIL`/`GESTOR_PASSWORD` em `.env`, apenas se ainda não existir nenhum
+   utilizador com esse email — é a única forma de a aplicação ter um primeiro gestor
+   sem nenhum registo público.
+2. **GESTOR (seguintes)** — qualquer gestor pode criar mais gestores via
+   `POST /api/auth/gestor/gestores` (`ConvidarGestorInput`) — são todos pares entre si,
+   sem hierarquia adicional. Todas as contas `GESTOR` têm `familiaId = NULL`.
+   Autenticam-se em `/api/auth/gestor/login` (só email+password — não têm agregado).
+3. **ADMIN por auto-registo (caminho principal)** — `POST /api/auth/registar`
+   (`RegistarAgregadoInput`, rota pública, sem autenticação prévia): o "Chefe de
+   Agregado" indica o email, a password (duas vezes — `password`/`confirmarPassword`,
+   comparadas em `registarAgregado`, não no schema Zod, para o schema continuar a ser
+   um `ZodObject` simples e compatível com a geração de OpenAPI), e o nome do agregado
+   que pretende. Cria a `Familia` e o seu `Utilizador` `ADMIN` numa só operação, com
+   `nome = email` (não se pede um nome à parte), e devolve sessão já autenticada
+   (login automático a seguir ao registo). Se o nome do agregado já estiver ocupado,
+   a resposta 409 vem com um campo `sugestao` (ex.: "Costa Filipe 2") — ver
+   `sugerirNomeAgregadoLivre`, que tenta " 2", " 3", … até encontrar um `codigoLogin`
+   livre.
+4. **ADMIN via gestor (caminho de suporte)** — `POST /api/auth/gestor/agregados`
+   (`CriarAgregadoInput`, exige sessão `GESTOR`) continua a existir, para um gestor
+   criar um agregado em nome de alguém (ex.: apoio técnico) — usa a mesma lógica de
+   sugestão de nome.
+5. **MEMBRO (ou outro ADMIN)** — criado por um `ADMIN` já existente do mesmo agregado,
+   via `POST /api/auth/membros` (inalterado) — continua a ser o próprio agregado a
+   gerir o seu crescimento.
 
 O login normal (`POST /api/auth/login`, `LoginInput`) exige `nomeAgregado` além de
 email/password: o backend normaliza esse texto com `normalizarCodigoLogin`

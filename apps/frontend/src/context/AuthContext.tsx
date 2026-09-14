@@ -1,5 +1,5 @@
 import { createContext, useContext, useEffect, useState, type ReactNode } from "react";
-import type { LoginGestorInput, LoginInput, SessaoResposta, UtilizadorPublico } from "@ged/shared";
+import type { LoginGestorInput, LoginInput, RegistarAgregadoInput, SessaoResposta, UtilizadorPublico } from "@ged/shared";
 import { api, definirAccessToken, renovarSessao } from "../lib/api";
 
 interface AuthContextValor {
@@ -7,6 +7,7 @@ interface AuthContextValor {
   carregando: boolean;
   entrar: (input: LoginInput) => Promise<void>;
   entrarComoGestor: (input: LoginGestorInput) => Promise<void>;
+  registar: (input: RegistarAgregadoInput) => Promise<void>;
   sair: () => Promise<void>;
 }
 
@@ -42,6 +43,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setUtilizador(resposta.utilizador);
   }
 
+  async function registar(input: RegistarAgregadoInput) {
+    const resposta = await api.post<SessaoResposta>("/auth/registar", input);
+    definirAccessToken(resposta.accessToken);
+    setUtilizador(resposta.utilizador);
+  }
+
   async function sair() {
     await api.post("/auth/logout");
     definirAccessToken(null);
@@ -49,7 +56,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }
 
   return (
-    <AuthContext.Provider value={{ utilizador, carregando, entrar, entrarComoGestor, sair }}>
+    <AuthContext.Provider value={{ utilizador, carregando, entrar, entrarComoGestor, registar, sair }}>
       {children}
     </AuthContext.Provider>
   );

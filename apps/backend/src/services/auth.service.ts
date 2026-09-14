@@ -6,6 +6,7 @@ import type {
   CriarAgregadoInput,
   LoginGestorInput,
   LoginInput,
+  RegistarAgregadoInput,
   UtilizadorPublico,
 } from "@ged/shared";
 import { env } from "../env.js";
@@ -15,6 +16,35 @@ import { hashPassword, verificarPassword } from "../lib/password.js";
 import { gerarRefreshTokenBruto, hashRefreshToken } from "../lib/refresh-token.js";
 
 export class ErroAutenticacao extends Error {}
+
+/** Nome de agregado já ocupado — carrega sempre uma alternativa livre pronta a propor. */
+export class ErroNomeAgregadoOcupado extends ErroAutenticacao {
+  constructor(
+    mensagem: string,
+    public sugestao: string,
+  ) {
+    super(mensagem);
+  }
+}
+
+/**
+ * Encontra uma variante livre de `nomeOriginal` (ex.: "Costa Filipe 2",
+ * "Costa Filipe 3", …) para propor quando o nome pedido já está ocupado.
+ * Usa `normalizarCodigoLogin` para verificar disponibilidade real (a mesma
+ * regra usada no login), não apenas igualdade de texto.
+ */
+async function sugerirNomeAgregadoLivre(prisma: PrismaClient, nomeOriginal: string): Promise<string> {
+  const base = nomeOriginal.trim();
+  for (let sufixo = 2; sufixo <= 50; sufixo++) {
+    const candidato = `${base} ${sufixo}`;
+    const ocupado = await prisma.familia.findUnique({
+      where: { codigoLogin: normalizarCodigoLogin(candidato) },
+    });
+    if (!ocupado) return candidato;
+  }
+  // Extremamente improvável (50 famílias com o mesmo nome-base) — garante sempre uma saída.
+  return `${base} ${Date.now().toString().slice(-5)}`;
+}
 
 function paraPublico(utilizador: {
   id: string;
@@ -89,6 +119,47 @@ export async function autenticarGestor(prisma: PrismaClient, input: LoginGestorI
   return { utilizador: paraPublico(utilizador), ...sessao };
 }
 
+/**
+ * Auto-registo do "Chefe de Agregado": cria o seu próprio agregado e fica
+ * automaticamente como Gestor do Agregado (papel ADMIN) — não depende do
+ * gestor da aplicação. O nome de utilizador nasce igual ao email (não se
+ * pede um nome à parte no registo). Se o nome de agregado pedido já
+ * existir, não falha a direito: devolve uma sugestão livre para o utilizador
+ * aceitar ou ajustar.
+ */
+export async function registarAgregado(prisma: PrismaClient, input: RegistarAgregadoInput) {
+  if (input.password !== input.confirmarPassword) {
+    throw new ErroAutenticacao("As passwords não coincidem.");
+  }
+
+  const emailExistente = await prisma.utilizador.findUnique({ where: { email: input.email } });
+  if (emailExistente) throw new ErroAutenticacao("Já existe uma conta com este email.");
+
+  const codigoLogin = normalizarCodigoLogin(input.nomeAgregado);
+  const agregadoExistente = await prisma.familia.findUnique({ where: { codigoLogin } });
+  if (agregadoExistente) {
+    const sugestao = await sugerirNomeAgregadoLivre(prisma, input.nomeAgregado);
+    throw new ErroNomeAgregadoOcupado("Já existe um agregado com este nome.", sugestao);
+  }
+
+  const agregado = await prisma.familia.create({
+    data: { nome: input.nomeAgregado.trim(), codigoLogin },
+  });
+
+  const utilizador = await prisma.utilizador.create({
+    data: {
+      familiaId: agregado.id,
+      nome: input.email,
+      email: input.email,
+      passwordHash: await hashPassword(input.password),
+      papel: "ADMIN",
+    },
+  });
+
+  const sessao = await emitirSessao(prisma, utilizador.id, agregado.id, "ADMIN");
+  return { utilizador: paraPublico(utilizador), ...sessao };
+}
+
 export async function refrescarSessao(prisma: PrismaClient, refreshTokenBruto: string) {
   const tokenHash = hashRefreshToken(refreshTokenBruto);
   const registo = await prisma.refreshToken.findUnique({
@@ -125,7 +196,10 @@ export async function criarAgregado(prisma: PrismaClient, input: CriarAgregadoIn
   const codigoLogin = normalizarCodigoLogin(input.nomeAgregado);
 
   const agregadoExistente = await prisma.familia.findUnique({ where: { codigoLogin } });
-  if (agregadoExistente) throw new ErroAutenticacao("Já existe um agregado com este nome.");
+  if (agregadoExistente) {
+    const sugestao = await sugerirNomeAgregadoLivre(prisma, input.nomeAgregado);
+    throw new ErroNomeAgregadoOcupado("Já existe um agregado com este nome.", sugestao);
+  }
 
   const emailExistente = await prisma.utilizador.findUnique({ where: { email: input.emailAdmin } });
   if (emailExistente) throw new ErroAutenticacao("Já existe uma conta com este email.");
